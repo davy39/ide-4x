@@ -9,7 +9,7 @@ kernels_to_delete = ["xcpp17", "xcpp20", "xcpp23", "xc11", "xc17"]
 
 print("--- Deleting Unwanted Kernel Directories ---")
 for kernel_name in kernels_to_delete:
-    kernel_path = Path(f".pixi/envs/c/share/jupyter/kernels/{kernel_name}")
+    kernel_path = Path(f".pixi/envs/kernels/share/jupyter/kernels/{kernel_name}")
     if kernel_path.exists() and kernel_path.is_dir():
         print(f"Deleting directory: {kernel_path}")
         shutil.rmtree(kernel_path)
@@ -24,10 +24,14 @@ kernels_to_update = [ ("Python","xpython"),
                       ("OCaml","xocaml"), 
                       ("SQL","xsqlite"), 
                       ("C","xc23"), 
-                      ("JavaScript","xjavascript")]
+                      ("JavaScript","xjavascript"),
+                      ("R","xr"),                     
+                      ("Octave","xoctave"),
+                      ("Lua","xlua")
+                      ]
 
 for display_name, kernel in kernels_to_update:
-    kernel_json = Path(f".pixi/envs/{display_name.lower()}/share/jupyter/kernels/{kernel}/kernel.json")
+    kernel_json = Path(f".pixi/envs/kernels/share/jupyter/kernels/{kernel}/kernel.json")
     
     # Check if the kernel.json file exists before trying to modify it
     if kernel_json.exists():
