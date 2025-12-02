@@ -1,0 +1,81 @@
+[workspace]
+name = "Jupyterlite"
+version = "0.1.0"
+description = "Setup a pixi environment for building a jupyterlite app with WASM"
+platforms = ["emscripten-wasm32", "linux-64"]
+channels = ["https://repo.prefix.dev/emscripten-forge-4x","https://repo.prefix.dev/emscripten-forge-dev", "conda-forge"]
+
+
+[feature.cpp]
+platforms = ["emscripten-wasm32"]
+dependencies = {xeus-cpp = "*"}
+[feature.python]
+platforms = ["emscripten-wasm32"]
+dependencies = {xeus-python = "*", matplotlib="*", ipywidgets="*", ipycanvas = "*", numpy="*", pandas="*"}
+[feature.sqlite]
+platforms = ["emscripten-wasm32"]
+dependencies = {xeus-sqlite = "*"}
+[feature.javascript]
+platforms = ["emscripten-wasm32"]
+dependencies = {xeus-javascript = "*"}
+[feature.ocaml]
+platforms = ["emscripten-wasm32"]
+dependencies = {xeus-ocaml = "*"}
+
+
+[feature.host]
+platforms = ["linux-64"]
+
+[feature.host.dependencies]
+xeus = ">=5.2.4"
+jupyterlab-language-pack-fr-FR = "*"
+#jupyterlite-xeus = ">=4.2.2"
+#jupyterlite-pyodide-kernel = "*"
+#jupyterlite-terminal ="*"
+jupyterlab-myst = "*"
+jupyter_server = "*"
+ipywidgets = "*"
+#jupyterlab = "*"
+jupyterlab-geojson = "*"
+micromamba = "*"
+
+[feature.host.pypi-dependencies]
+jupyterlite-terminal= { url = "https://github.com/jupyterlite/terminal/releases/download/v1.0.1/jupyterlite_terminal-1.0.1-py3-none-any.whl"}
+jupyterlab = { url = "https://github.com/jupyterlab/jupyterlab/releases/download/v4.5.0b1/jupyterlab-4.5.0b1-py3-none-any.whl"}
+# notebook = { url = "https://github.com/jupyter/notebook/releases/download/v7.5.0b1/notebook-7.5.0b1-py3-none-any.whl"}
+jupyterlite-core = { url = "https://github.com/jupyterlite/jupyterlite/releases/download/v0.7.0b0/jupyterlite_core-0.7.0b0-py3-none-any.whl"}
+jupyterlite-xeus = { url = "https://github.com/jupyterlite/xeus/releases/download/v4.3.0a3/jupyterlite_xeus-4.3.0a3-py3-none-any.whl" }
+
+[feature.host.tasks]
+
+setup_kernel = { cmd = """
+pixi install \
+-e c \
+-e python \
+-e sql \
+-e javascript \
+-e ocaml
+"""}
+
+rename = "python scripts/rename.py"
+
+build = { cmd = """
+jupyter lite build \
+--XeusAddon.prefix=.pixi/envs/c \
+--XeusAddon.prefix=.pixi/envs/python \
+--XeusAddon.prefix=.pixi/envs/sql \
+--XeusAddon.prefix=.pixi/envs/javascript \
+--XeusAddon.prefix=.pixi/envs/ocaml
+
+
+""", depends-on = ["setup_kernel", "rename"] }
+
+serve ={ cmd = "python -m http.server 8000 -d dist", depends-on = ["build"]}
+
+[environments]
+default = ["host"]
+c = ["cpp"]
+python = ["python"]
+sql = ["sqlite"]
+javascript = ["javascript"]
+ocaml = ["ocaml"]

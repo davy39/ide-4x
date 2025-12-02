@@ -1,0 +1,20 @@
+{
+  "packages": {
+    "git2cpp": {},
+    "lua": {},
+    "nano": {},
+    "tree": {},
+    "vim": {}
+  },
+  "aliases": {
+    "git": "git2cpp",
+    "vi": "vim"
+  },
+  "environment": {
+    "GIT_CORS_PROXY": "https://corsproxy.io/?url=",
+    "GIT_AUTHOR_NAME": "Davy",
+    "GIT_AUTHOR_EMAIL": "davy@ik.me",
+    "GIT_COMMITTER_NAME": "Davy",
+    "GIT_COMMITTER_EMAIL": "davy@ik.me"
+  }
+}

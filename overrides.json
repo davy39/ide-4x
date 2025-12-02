@@ -1,0 +1,38 @@
+{
+  "@jupyterlab/translation-extension:plugin": {
+    "locale": "fr_FR"
+  },
+  "@jupyterlab/apputils-extension:themes": {
+    "theme": "JupyterLab Dark"
+  },
+  "@jupyterlite/application-extension:shell": {
+    "appName": "Jupyter"
+  },
+  "@jupyterlab/notebook-extension:panel": {
+    "toolbar": [
+      {
+        "name": "download",
+        "label": "Télécharger",
+        "args": {},
+        "command": "docmanager:download",
+        "icon": "ui-components:download",
+        "rank": 50
+      }
+    ]
+  },
+  "@jupyterlab/codemirror-extension:plugin": {
+  "defaultConfig": {
+    "tabSize": 2
+  }
+  },
+  "@jupyterlab/completer-extension:manager": {
+    "availableProviders": {
+      "CompletionProvider:context": 500,
+      "CompletionProvider:kernel": 550
+    },
+    "providerTimeout": 1000,
+    "showDocumentationPanel": true,
+    "autoCompletion": false,
+    "suppressIfInlineCompleterActive": true
+  }
+}
