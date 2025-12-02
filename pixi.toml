@@ -11,7 +11,8 @@ platforms = ["emscripten-wasm32"]
 dependencies = {xeus-cpp = "*"}
 [feature.python]
 platforms = ["emscripten-wasm32"]
-dependencies = {xeus-python = "*", matplotlib="*", ipywidgets="*", ipycanvas = "*", numpy="*", pandas="*"}
+dependencies = {xeus-python = "*", matplotlib="*",  numpy="*", pandas="*"}
+#ipywidgets="*", ipycanvas = "*",
 [feature.sqlite]
 platforms = ["emscripten-wasm32"]
 dependencies = {xeus-sqlite = "*"}
@@ -21,7 +22,15 @@ dependencies = {xeus-javascript = "*"}
 [feature.ocaml]
 platforms = ["emscripten-wasm32"]
 dependencies = {xeus-ocaml = "*"}
-
+[feature.lua]
+platforms = ["emscripten-wasm32"]
+dependencies = {xeus-lua = "*"}
+[feature.octave]
+platforms = ["emscripten-wasm32"]
+dependencies = {xeus-octave = "*"}
+[feature.r]
+platforms = ["emscripten-wasm32"]
+dependencies = {xeus-r = "*"}
 
 [feature.host]
 platforms = ["linux-64"]
@@ -31,20 +40,22 @@ xeus = ">=5.2.4"
 jupyterlab-language-pack-fr-FR = "*"
 #jupyterlite-xeus = ">=4.2.2"
 #jupyterlite-pyodide-kernel = "*"
-#jupyterlite-terminal ="*"
+jupyterlite-terminal ="*"
 jupyterlab-myst = "*"
 jupyter_server = "*"
 ipywidgets = "*"
-#jupyterlab = "*"
+jupyterlab = "*"
+jupyterlite-core = "*"
+jupyterlite-xeus = "*"
 jupyterlab-geojson = "*"
 micromamba = "*"
 
-[feature.host.pypi-dependencies]
-jupyterlite-terminal= { url = "https://github.com/jupyterlite/terminal/releases/download/v1.0.1/jupyterlite_terminal-1.0.1-py3-none-any.whl"}
-jupyterlab = { url = "https://github.com/jupyterlab/jupyterlab/releases/download/v4.5.0b1/jupyterlab-4.5.0b1-py3-none-any.whl"}
+#[feature.host.pypi-dependencies]
+#jupyterlite-terminal= { url = "https://github.com/jupyterlite/terminal/releases/download/v1.0.1/jupyterlite_terminal-1.0.1-py3-none-any.whl"}
+#jupyterlab = { url = "https://github.com/jupyterlab/jupyterlab/releases/download/v4.5.0b1/jupyterlab-4.5.0b1-py3-none-any.whl"}
 # notebook = { url = "https://github.com/jupyter/notebook/releases/download/v7.5.0b1/notebook-7.5.0b1-py3-none-any.whl"}
-jupyterlite-core = { url = "https://github.com/jupyterlite/jupyterlite/releases/download/v0.7.0b0/jupyterlite_core-0.7.0b0-py3-none-any.whl"}
-jupyterlite-xeus = { url = "https://github.com/jupyterlite/xeus/releases/download/v4.3.0a3/jupyterlite_xeus-4.3.0a3-py3-none-any.whl" }
+#jupyterlite-core = { url = "https://github.com/jupyterlite/jupyterlite/releases/download/v0.7.0b0/jupyterlite_core-0.7.0b0-py3-none-any.whl"}
+#jupyterlite-xeus = { url = "https://github.com/jupyterlite/xeus/releases/download/v4.3.0a3/jupyterlite_xeus-4.3.0a3-py3-none-any.whl" }
 
 [feature.host.tasks]
 
@@ -55,6 +66,9 @@ pixi install \
 -e sql \
 -e javascript \
 -e ocaml
+-e lua
+-e octave
+-e r
 """}
 
 rename = "python scripts/rename.py"
@@ -66,6 +80,9 @@ jupyter lite build \
 --XeusAddon.prefix=.pixi/envs/sql \
 --XeusAddon.prefix=.pixi/envs/javascript \
 --XeusAddon.prefix=.pixi/envs/ocaml
+--XeusAddon.prefix=.pixi/envs/lua \
+--XeusAddon.prefix=.pixi/envs/octave \
+--XeusAddon.prefix=.pixi/envs/r
 
 
 """, depends-on = ["setup_kernel", "rename"] }
@@ -79,3 +96,6 @@ python = ["python"]
 sql = ["sqlite"]
 javascript = ["javascript"]
 ocaml = ["ocaml"]
+lua = ["lua"]
+octave = ["octave"]
+r = ["r"]
