@@ -1,0 +1,59 @@
+--- a/include/xeus-javascript/xinterpreter.hpp
++++ b/include/xeus-javascript/xinterpreter.hpp
+@@ -72,7 +72,9 @@
+ 
+         nl::json kernel_info_request_impl() override;
+ 
+-        void shutdown_request_impl() override;
++        nl::json shutdown_request_impl(bool restart) override;
++
++        nl::json interrupt_request_impl() override;
+ 
+ 
+     };
+--- a/src/xinterpreter.cpp
++++ b/src/xinterpreter.cpp
+@@ -109,15 +109,19 @@
+         );
+ 
+     }
+-    void interpreter::shutdown_request_impl() {
++    nl::json interpreter::shutdown_request_impl(bool restart) {
+         //std::cout << "Bye!!" << std::endl;
++        return xeus::create_shutdown_reply(restart);
++    }
++
++    nl::json interpreter::interrupt_request_impl() {
++        return xeus::create_interrupt_reply();
+     }
+ 
+ 
+     nl::json interpreter::kernel_info_request_impl()
+     {
+ 
+-        const std::string  protocol_version = "5.3";
+         const std::string  implementation = "xjavascript";
+         const std::string  implementation_version = XEUS_JAVASCRIPT_VERSION;
+         const std::string  language_name = "javascript";
+@@ -128,13 +132,11 @@
+         const std::string  language_codemirror_mode = "";
+         const std::string  language_nbconvert_exporter = "";
+         const std::string  banner = "xjavascript";
+-        const bool         debugger = false;
+ 
+         const nl::json     help_links = nl::json::array();
+ 
+ 
+         return xeus::create_info_reply(
+-            protocol_version,
+             implementation,
+             implementation_version,
+             language_name,
+@@ -145,7 +147,6 @@
+             language_codemirror_mode,
+             language_nbconvert_exporter,
+             banner,
+-            debugger,
+             help_links
+         );
+     }

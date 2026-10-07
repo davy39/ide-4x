@@ -41,6 +41,11 @@ jupyterlite-core = "*"
 jupyterlite-xeus = "*"
 jupyterlab-geojson = "*"
 micromamba = "*"
+# Local build of xeus-javascript (conda 4x channel ships stale 0.4.0, see scripts/build-xeus-javascript.sh)
+emscripten_emscripten-wasm32 = "4.0.9.*"
+cmake = ">=4"
+ninja = "*"
+pkg-config = "*"
 
 #[feature.host.pypi-dependencies]
 #jupyterlite-terminal= { url = "https://github.com/jupyterlite/terminal/releases/download/v1.0.1/jupyterlite_terminal-1.0.1-py3-none-any.whl"}
@@ -57,13 +62,15 @@ pixi install --platform emscripten-wasm32 -e kernels
 
 rename = "python scripts/rename.py"
 
+build_xeus_javascript = "bash scripts/build-xeus-javascript.sh"
+
 build = { cmd = """
 jupyter lite build \
 --XeusAddon.prefix=.pixi/envs/kernels \
 --XeusAddon.default_channels=https://repo.prefix.dev/emscripten-forge-4x \
 --XeusAddon.default_channels=https://repo.prefix.dev/emscripten-forge-dev \
 --XeusAddon.default_channels=conda-forge
-""", depends-on = ["setup_kernel", "rename"] }
+""", depends-on = ["setup_kernel", "build_xeus_javascript", "rename"] }
 
 serve ={ cmd = "python -m http.server 8000 -d dist", depends-on = ["build"]}
 
