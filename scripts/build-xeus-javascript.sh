@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Rebuild xeus-javascript from source (0.4.2, with the Emscripten 4 fix from
-# the upstream 4x branch / PR #42) and install it over the wasm kernels env.
+# Rebuild xeus-javascript from source and install it over the wasm kernels env.
 #
 # Why: the emscripten-forge-4x conda channel only ships xeus-javascript builds
 # whose `xeus` pin is incompatible with this env:
@@ -8,12 +7,14 @@
 #     fix (convert_json.hpp), so the kernel never starts (infinite loading);
 #   - 0.4.2 (fixed source) pins `xeus >=5.2.6,<5.3.0a0`, uninstallable next to
 #     xeus 6.0.6 (required by xeus-haskell and the other recent kernels).
-# So we compile 0.4.2 locally against the env's xeus 6.0.6.
+# So we compile the xeus6 branch of our fork locally against the env's
+# xeus 6.0.6. The fork (branch xeus6) ports 0.4.2 to the xeus 6 interpreter
+# API and registers the nl::json embind type id for Emscripten 4.
 # The intermediate xeus-lite 5.0.0 (headers moved out of xeus 6) is built too,
 # into a staging prefix used for build only (its conda package has the same
 # stale xeus pin problem).
-# Sources:
-#   https://github.com/jupyter-xeus/xeus-javascript (tag 0.4.2)
+# Sources (pinned, verified by sha256):
+#   https://github.com/davy39/xeus-javascript (branch xeus6, commit JS_COMMIT)
 #   https://github.com/jupyter-xeus/xeus-lite (tag 5.0.0)
 set -euo pipefail
 
@@ -21,20 +22,20 @@ XEUS_LITE_VERSION="5.0.0"
 XEUS_LITE_SHA256="d0f03b73526f398d43b404170459135abcb2489f9b10ee007c90f7af46f66228"
 XEUS_LITE_URL="https://github.com/jupyter-xeus/xeus-lite/archive/refs/tags/${XEUS_LITE_VERSION}.tar.gz"
 
-JS_VERSION="0.4.2"
-JS_SHA256="c37f1fb43a3cf0e65a2bc0593083b242fdb40d527667b861bfb41866416d8214"
-JS_URL="https://github.com/jupyter-xeus/xeus-javascript/archive/refs/tags/${JS_VERSION}.tar.gz"
+JS_COMMIT="ec88ef797e040f263f0f651797829419bdbe8f52"
+JS_SHA256="e9add4e05be0e633dad6066efdb1f4fa738b514608e486f2e57aaf9cd44acb4b"
+JS_URL="https://github.com/davy39/xeus-javascript/archive/${JS_COMMIT}.tar.gz"
+JS_SRC_DIR="xeus-javascript-${JS_COMMIT}"
 
 ROOT="$PWD"
 KERNELS_PREFIX="${ROOT}/.pixi/envs/kernels"
 WORK_DIR="${ROOT}/build/wasm-deps"
 STAGING_PREFIX="${WORK_DIR}/staging"
-PATCH_FILE="${ROOT}/scripts/xeus-javascript-xeus6.patch"
 MARKER="${KERNELS_PREFIX}/share/xeus-javascript-local-build.txt"
-EXPECTED_MARKER="${JS_VERSION} $(sha256sum "${PATCH_FILE}" | cut -d' ' -f1)"
+EXPECTED_MARKER="xeus6-${JS_COMMIT}"
 
 if [ -f "${MARKER}" ] && [ "$(cat "${MARKER}")" = "${EXPECTED_MARKER}" ]; then
-  echo "xeus-javascript ${JS_VERSION} already built in ${KERNELS_PREFIX}, skipping."
+  echo "xeus-javascript ${EXPECTED_MARKER} already built in ${KERNELS_PREFIX}, skipping."
   exit 0
 fi
 
@@ -46,6 +47,8 @@ fi
 command -v emcmake >/dev/null 2>&1 || { echo "ERROR: emcmake not on PATH (missing emscripten package?)" >&2; exit 1; }
 
 mkdir -p "${WORK_DIR}"
+# Legacy unpack dirs from previous script versions.
+rm -rf "${ROOT}/build/xeus-javascript" "${WORK_DIR}/xeus-javascript-0.4.2"
 
 fetch_and_unpack() {
   local name="$1" version="$2" sha256="$3" url="$4"
@@ -70,21 +73,6 @@ EOF
   tar xzf "${tarball}" -C "${WORK_DIR}"
 }
 
-# xeus-javascript 0.4.2 implements the xeus 5 interpreter interface;
-# this env ships xeus 6 (shutdown/interrupt replies). Port it.
-apply_js_xeus6_patch() {
-  local src_dir="${WORK_DIR}/xeus-javascript-${JS_VERSION}"
-  local patch_sha
-  patch_sha="$(sha256sum "${PATCH_FILE}" | cut -d' ' -f1)"
-  if [ -f "${src_dir}/.xeus6-patched" ] && [ "$(cat "${src_dir}/.xeus6-patched")" = "${patch_sha}" ]; then
-    return 0
-  fi
-  rm -rf "${src_dir}"
-  tar xzf "${WORK_DIR}/xeus-javascript-${JS_VERSION}.tar.gz" -C "${WORK_DIR}"
-  patch -p1 -d "${src_dir}" < "${PATCH_FILE}"
-  echo "${patch_sha}" > "${src_dir}/.xeus6-patched"
-}
-
 # NOTE: the Emscripten toolchain forces CMAKE_FIND_ROOT_PATH_MODE_*=ONLY,
 # which ignores CMAKE_PREFIX_PATH; conda/rattler builds override with BOTH.
 FIND_ROOT_MODES="-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH"
@@ -100,22 +88,15 @@ emcmake cmake -S "${WORK_DIR}/xeus-lite-${XEUS_LITE_VERSION}" \
 cmake --build "${WORK_DIR}/xeus-lite-${XEUS_LITE_VERSION}/build"
 cmake --install "${WORK_DIR}/xeus-lite-${XEUS_LITE_VERSION}/build"
 
-fetch_and_unpack "xeus-javascript" "${JS_VERSION}" "${JS_SHA256}" "${JS_URL}"
-apply_js_xeus6_patch
-# xeus-javascript does not set TARGET_SUPPORTS_SHARED_LIBS itself (unlike
-# xeus-lite), but it imports the shared `xeus` target, so enable it up front.
-cat > "${WORK_DIR}/EmscriptenSharedLibs.cmake" <<'EOF'
-set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)
-EOF
-emcmake cmake -S "${WORK_DIR}/xeus-javascript-${JS_VERSION}" \
-  -B "${WORK_DIR}/xeus-javascript-${JS_VERSION}/build" -G Ninja \
+fetch_and_unpack "xeus-javascript" "${JS_COMMIT}" "${JS_SHA256}" "${JS_URL}"
+emcmake cmake -S "${WORK_DIR}/${JS_SRC_DIR}" \
+  -B "${WORK_DIR}/${JS_SRC_DIR}/build" -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   ${FIND_ROOT_MODES} \
-  -DCMAKE_PROJECT_INCLUDE="${WORK_DIR}/EmscriptenSharedLibs.cmake" \
   -DCMAKE_PREFIX_PATH="${STAGING_PREFIX};${KERNELS_PREFIX}" \
   -DCMAKE_INSTALL_PREFIX="${KERNELS_PREFIX}"
-cmake --build "${WORK_DIR}/xeus-javascript-${JS_VERSION}/build"
-cmake --install "${WORK_DIR}/xeus-javascript-${JS_VERSION}/build"
+cmake --build "${WORK_DIR}/${JS_SRC_DIR}/build"
+cmake --install "${WORK_DIR}/${JS_SRC_DIR}/build"
 
 echo "${EXPECTED_MARKER}" > "${MARKER}"
-echo "xeus-javascript ${JS_VERSION} installed into ${KERNELS_PREFIX}"
+echo "xeus-javascript ${EXPECTED_MARKER} installed into ${KERNELS_PREFIX}"
