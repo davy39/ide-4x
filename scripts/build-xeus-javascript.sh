@@ -29,9 +29,11 @@ ROOT="$PWD"
 KERNELS_PREFIX="${ROOT}/.pixi/envs/kernels"
 WORK_DIR="${ROOT}/build/wasm-deps"
 STAGING_PREFIX="${WORK_DIR}/staging"
+PATCH_FILE="${ROOT}/scripts/xeus-javascript-xeus6.patch"
 MARKER="${KERNELS_PREFIX}/share/xeus-javascript-local-build.txt"
+EXPECTED_MARKER="${JS_VERSION} $(sha256sum "${PATCH_FILE}" | cut -d' ' -f1)"
 
-if [ -f "${MARKER}" ] && [ "$(cat "${MARKER}")" = "${JS_VERSION}" ]; then
+if [ -f "${MARKER}" ] && [ "$(cat "${MARKER}")" = "${EXPECTED_MARKER}" ]; then
   echo "xeus-javascript ${JS_VERSION} already built in ${KERNELS_PREFIX}, skipping."
   exit 0
 fi
@@ -72,11 +74,15 @@ EOF
 # this env ships xeus 6 (shutdown/interrupt replies). Port it.
 apply_js_xeus6_patch() {
   local src_dir="${WORK_DIR}/xeus-javascript-${JS_VERSION}"
-  if [ -f "${src_dir}/.xeus6-patched" ]; then
+  local patch_sha
+  patch_sha="$(sha256sum "${PATCH_FILE}" | cut -d' ' -f1)"
+  if [ -f "${src_dir}/.xeus6-patched" ] && [ "$(cat "${src_dir}/.xeus6-patched")" = "${patch_sha}" ]; then
     return 0
   fi
-  patch -p1 -d "${src_dir}" < "${ROOT}/scripts/xeus-javascript-xeus6.patch"
-  touch "${src_dir}/.xeus6-patched"
+  rm -rf "${src_dir}"
+  tar xzf "${WORK_DIR}/xeus-javascript-${JS_VERSION}.tar.gz" -C "${WORK_DIR}"
+  patch -p1 -d "${src_dir}" < "${PATCH_FILE}"
+  echo "${patch_sha}" > "${src_dir}/.xeus6-patched"
 }
 
 # NOTE: the Emscripten toolchain forces CMAKE_FIND_ROOT_PATH_MODE_*=ONLY,
@@ -111,5 +117,5 @@ emcmake cmake -S "${WORK_DIR}/xeus-javascript-${JS_VERSION}" \
 cmake --build "${WORK_DIR}/xeus-javascript-${JS_VERSION}/build"
 cmake --install "${WORK_DIR}/xeus-javascript-${JS_VERSION}/build"
 
-echo "${JS_VERSION}" > "${MARKER}"
+echo "${EXPECTED_MARKER}" > "${MARKER}"
 echo "xeus-javascript ${JS_VERSION} installed into ${KERNELS_PREFIX}"

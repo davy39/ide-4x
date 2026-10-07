@@ -57,3 +57,52 @@
              help_links
          );
      }
+--- a/include/xeus-javascript/convert_json.hpp
++++ b/include/xeus-javascript/convert_json.hpp
+@@ -47,23 +47,36 @@
+     }
+ };
+ 
+-#ifdef XEUS_JAVASCRIPT_EMSCRIPTEN_OLD
+ 
+ 
+-template <typename T>
+-using is_decayed_json = std::is_same<std::decay_t<T>, nl::json>;
+-
+-template <typename T>
+-using enable_if_decayed_json = typename std::enable_if<is_decayed_json<T>::value, void>::type;
+-
+-template<class T>
+-struct TypeID<T, enable_if_decayed_json<T> > {
++// NOTE: the SFINAE partial specialization used with Emscripten 3
++// (TypeID<T, enable_if_decayed_json<T>>) is ambiguous with the forwarding
++// partial specializations (TypeID<const T>, TypeID<T&>, TypeID<T&&>)
++// introduced in Emscripten 4, so map the exact json type set with full
++// specializations instead.
++template <>
++struct TypeID<nl::json> {
+     static constexpr TYPEID get() {
+         return LightTypeID<val>::get();
+     }
+ };
+ 
+-#endif
++template <>
++struct TypeID<const nl::json> : TypeID<nl::json> {
++};
++
++template <>
++struct TypeID<nl::json&> : TypeID<nl::json> {
++};
++
++template <>
++struct TypeID<const nl::json&> : TypeID<nl::json> {
++};
++
++template <>
++struct TypeID<nl::json&&> : TypeID<nl::json> {
++};
++
+ 
+ }  // namespace internal
+ }  // namespace emscripten
