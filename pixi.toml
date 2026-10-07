@@ -28,7 +28,7 @@ xeus-r = "*"
 platforms = ["linux-64"]
 
 [feature.host.dependencies]
-xeus = ">=5.2.4"
+xeus = "*"
 jupyterlab-language-pack-fr-FR = "*"
 #jupyterlite-xeus = ">=4.2.2"
 #jupyterlite-pyodide-kernel = "*"
@@ -51,14 +51,17 @@ micromamba = "*"
 [feature.host.tasks]
 
 setup_kernel = { cmd = """
-pixi install -e kernels
+pixi install --platform emscripten-wasm32 -e kernels
 """}
 
 rename = "python scripts/rename.py"
 
 build = { cmd = """
 jupyter lite build \
---XeusAddon.prefix=.pixi/envs/kernels
+--XeusAddon.prefix=.pixi/envs/kernels \
+--XeusAddon.default_channels=https://repo.prefix.dev/emscripten-forge-4x \
+--XeusAddon.default_channels=https://repo.prefix.dev/emscripten-forge-dev \
+--XeusAddon.default_channels=conda-forge
 """, depends-on = ["setup_kernel", "rename"] }
 
 serve ={ cmd = "python -m http.server 8000 -d dist", depends-on = ["build"]}
