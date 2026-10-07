@@ -27,7 +27,8 @@ kernels_to_update = [ ("Python","xpython"),
                       ("JavaScript","xjavascript"),
                       ("R","xr"),                     
                       ("Octave","xoctave"),
-                      ("Lua","xlua")
+                      ("Lua","xlua"),
+                      ("Haskell","xhaskell")
                       ]
 
 for display_name, kernel in kernels_to_update:

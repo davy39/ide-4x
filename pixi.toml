@@ -23,6 +23,7 @@ xeus-ocaml = "*"
 xeus-lua = "*"
 xeus-octave = "*"
 xeus-r = "*"
+xeus-haskell = "*"
 
 [feature.host]
 platforms = ["linux-64"]
